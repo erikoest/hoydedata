@@ -1,0 +1,18 @@
+[package]
+name = "hoydedata"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+image = "*"
+kamadak-exif = "*"
+# 0.17 is not supported due to private data field rv.data
+gdal = { version = "0.16.0", features = ["bindgen"] }
+serde = { version = "*", features = ["derive", "rc"] }
+serde_json = "*"
+lazy-regex = "*"
+lazy_static = "*"
+thiserror = "*"
+crossbeam-channel = "*"
+geomorph = "*"
+utm = "*"
