@@ -62,8 +62,8 @@ Used for creating atlas-files from a zipped package of geotiff maps,
 or a directory of geotiff files.
 
 <pre>
-index --maps &lt;mapdir&gt; &lt;zipfile&gt;
-index --maps &lt;mapdir&gt; &lt;tiffdir&gt;
+index &lt;mapdir&gt; &lt;zipfile&gt;
+index &lt;mapdir&gt; &lt;tiffdir&gt;
 </pre>
 
 ### Lookup
