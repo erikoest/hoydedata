@@ -1,6 +1,5 @@
 use std::fmt;
-use serde::{Deserialize, Serialize, Deserializer};
-use serde::{de::Visitor, de::MapAccess, de::self};
+use serde::{Deserialize, Serialize, Deserializer, Serializer};
 use lazy_regex::regex_captures;
 use lazy_static::lazy_static;
 use std::collections::HashMap;
@@ -96,16 +95,10 @@ impl fmt::Display for Coord3 {
     }
 }
 
-#[derive(Copy, Debug, Clone, PartialEq, Serialize)]
+#[derive(Copy, Debug, Clone, PartialEq)]
 pub struct Coord {
     pub e: f32,
     pub n: f32,
-}
-
-impl fmt::Display for Coord {
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-	formatter.write_fmt(format_args!("N{}E{}", self.n, self.e))
-    }
 }
 
 impl Coord {
@@ -165,6 +158,12 @@ impl Coord {
     }
 }
 
+impl fmt::Display for Coord {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+	formatter.write_fmt(format_args!("N{}E{}", self.n, self.e))
+    }
+}
+
 impl From<&str> for Coord {
     fn from(s: &str) -> Self {
         if let Ok(c) = s.parse() {
@@ -184,7 +183,7 @@ impl FromStr for Coord {
 	    return Ok(Coord::from(*LOCATIONS.get(s).unwrap()));
 	}
 
-	let res = regex_captures!("N([0-9.]+)E([0-9.]+)$", s);
+	let res = regex_captures!("N(-?[0-9.]+)E(-?[0-9.]+)$", s);
 	if let Some((_, n, e)) = res {
 	    Ok(Coord { e: e.parse().unwrap(), n: n.parse().unwrap() })
 	}
@@ -225,50 +224,12 @@ impl ops::AddAssign<Coord> for Coord {
     }
 }
 
-struct CoordVisitor;
-
-impl<'de> Visitor<'de> for CoordVisitor {
-    type Value = Coord;
-
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        formatter.write_str("Geo coordinate.")
-    }
-
-    fn visit_string<E>(self, s: String) -> std::result::Result<Self::Value, E>
-    where
-        E: de::Error,
+impl Serialize for Coord {
+    fn serialize<S>(&self, serializer: S)
+                    -> std::result::Result<S::Ok, S::Error>
+    where S: Serializer,
     {
-        Ok(Coord::from(s.as_str()))
-    }
-
-    fn visit_map<M>(self, mut map: M) -> Result<Coord, M::Error>
-        where
-            M: MapAccess<'de>,
-    {
-	let mut e = None;
-        let mut n = None;
-        while let Some(key) = map.next_key()? {
-            match key {
-                "e" => {
-                    if e.is_some() {
-                        return Err(de::Error::duplicate_field("e"));
-                    }
-                    e = Some(map.next_value()?);
-                }
-                "n" => {
-                    if n.is_some() {
-                        return Err(de::Error::duplicate_field("n"));
-                    }
-                    n = Some(map.next_value()?);
-                }
-		_ => {
-		    return Err(de::Error::unknown_field("bla", &[""]));
-		}
-            }
-        }
-        let e = e.ok_or_else(|| de::Error::missing_field("e"))?;
-        let n = n.ok_or_else(|| de::Error::missing_field("n"))?;
-        Ok(Coord::new(e, n))
+        serializer.serialize_str(&self.to_string())
     }
 }
 
@@ -277,7 +238,8 @@ impl<'de> Deserialize<'de> for Coord {
     where
         D: Deserializer<'de>,
     {
-        deserializer.deserialize_any(CoordVisitor)
+        let s = String::deserialize(deserializer)?;
+        Ok(Coord::from(s.as_str()))
     }
 }
 
