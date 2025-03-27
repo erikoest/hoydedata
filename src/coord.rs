@@ -130,6 +130,14 @@ impl Coord {
 	(self.e*self.e + self.n*self.n).sqrt()
     }
 
+    pub fn abs_sq(&self) -> f32 {
+	self.e*self.e + self.n*self.n
+    }
+
+    pub fn dot(&self, o: &Coord) -> f32 {
+        self.e*o.e + self.n*o.n
+    }
+
     pub fn rot90(&self) -> Coord {
         Self {
             e: - self.n,
